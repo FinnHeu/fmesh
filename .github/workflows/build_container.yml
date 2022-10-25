@@ -40,8 +40,8 @@ jobs:
         with:
           context: .
           push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
+          tags: ghcr.io/${{ steps.meta.outputs.tags }}
+          labels: ghcr.io/${{ steps.meta.outputs.labels }}
   apptainer:  # Former name of singularity
     runs-on: ubuntu-latest
     steps:
