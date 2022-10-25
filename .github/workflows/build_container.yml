@@ -42,12 +42,12 @@ jobs:
           # Write Singularity file
           spython recipe Dockerfile &> Singularity.def
       - name: Install Singularity
-        uses: FESOM/setup-singularity@v1.0.0
+        uses: FESOM/setup-singularity
         with:
           singularity-version: 3.8.7
       - name: Build Singularity Container
         run: |
-          singularity build ${GITHUB_REPOSITORY}.sif Singularity.def 
+          sudo singularity build ${GITHUB_REPOSITORY}.sif Singularity.def 
       - name: Push Container 
         run: 
           singularity push # to where...? 
