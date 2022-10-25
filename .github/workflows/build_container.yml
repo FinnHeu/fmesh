@@ -8,7 +8,8 @@ name: Containerize
 on:
   push:
     branches:
-      - 'main'
+      # - 'main'
+      - 'containerization'  # For testing, to be removed.
 
 jobs:
   docker:
