@@ -30,7 +30,7 @@ jobs:
         with:
           push: true
           # Maybe a bad idea to always overload the :latest tag
-          tags: ${{ env.GITHUB_REPOSITORY }}:latest  
+          tags: ${{ github.repository }}:latest  
   apptainer:  # Former name of singularity
     runs-on: ubuntu-latest
     steps:
