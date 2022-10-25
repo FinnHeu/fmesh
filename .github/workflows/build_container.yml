@@ -30,7 +30,7 @@ jobs:
           push: true
           # Maybe a bad idea to always overload the :latest tag
           tags: ${{ env.GITHUB_REPOSITORY }}:latest  
-  singularity:
+  apptainer:  # Former name of singularity
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -39,15 +39,14 @@ jobs:
           pip3 install spython
           # Print once to log file:
           spython recipe Dockerfile
-          # Write Singularity file
-          spython recipe Dockerfile &> Singularity.def
-      - name: Install Singularity
-        uses: FESOM/setup-singularity@v1.0.0
-        with:
-          singularity-version: 3.8.7
-      - name: Build Singularity Container
+          # Write apptainer file
+          spython recipe Dockerfile &> apptainer.def
+      - name: Setup apptainer
+        uses: eWaterCycle/setup-apptainer@v1.0.1
+      - name: Build Apptainer Container
         run: |
-          sudo singularity build ${GITHUB_REPOSITORY}.sif Singularity.def 
+          apptainer build ${GITHUB_REPOSITORY}.sif apptainer.def 
+      # Probably need to authenticate first...
       - name: Push Container 
         run: 
-          singularity push # to where...? 
+          apptainer push ${GITHUB_REPOSITORY}.sif library://FESOM/fmesh/${GITHUB_REPOSITORY}.sif:latest 
