@@ -34,15 +34,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - name: Install spython
-        run: |
-          pip3 install spython
-      - name: Generate Apptainer definition file
-        run: |
-          # Print once to log file:
-          spython recipe Dockerfile
-          # Write apptainer file. Quiet flag needed to squash logger messages.
-          spython --quiet recipe Dockerfile &> apptainer.def
       - name: Setup apptainer
         uses: eWaterCycle/setup-apptainer@v1.0.1
       - name: Build Apptainer Container
