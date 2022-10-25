@@ -27,6 +27,8 @@ jobs:
         uses: docker/build-push-action@v3
         with:
           push: true
+          tags: |
+            user/app:latest
   apptainer:  # Former name of singularity
     runs-on: ubuntu-latest
     steps:
