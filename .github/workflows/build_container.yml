@@ -34,6 +34,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
+      - name: Show some diagnostics
+        run: |
+          env
+          pwd
+          ls -ratl
       - name: Setup apptainer
         uses: eWaterCycle/setup-apptainer@v1.0.1
       - name: Build Apptainer Container
