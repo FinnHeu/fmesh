@@ -1,0 +1,52 @@
+
+# Builds and publishes a Docker container to the GitHub Container Registry 
+# and a Singularity Container to the Singularity Registry
+#
+# Paul Gierz, October 2022
+name: Containerize
+
+on:
+  push:
+    branches:
+      - 'main'
+
+jobs:
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+      - name: Login to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Build and push
+        uses: docker/build-push-action@v3
+        with:
+          push: true
+          # Maybe a bad idea to always overload the :latest tag
+          tags: ${{GITHUB_REPOSITORY}}:latest  
+  singularity:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Install spython
+        run: |
+          pip3 install spython
+          # Print once to log file:
+          spython recipe Dockerfile
+          # Write Singularity file
+          spython recipe Dockerfile &> Singularity.def
+      - name: Install Singularity
+        uses: FESOM/setup-singularity@v7
+        with:
+          singularity-version: 3.8.7
+      - name: Build Singularity Container
+        run: |
+          singularity build ${GITHUB_REPOSITORY}.sif Singularity.def 
+      - name: Push Container 
+        run: 
+          singularity push # to where...? 
