@@ -3,10 +3,10 @@ From: mambaorg/micromamba
 Stage: spython-base
 
 %files
-. /tmp
+. 
 %post
-sed -i 's/name: fmesh/name: base/g' /tmp/requirements.yml
-micromamba install -f /tmp/requirements.yml
+sed -i 's/name: fmesh/name: base/g' ./requirements.yml
+micromamba install -f ./requirements.yml
 MAMBA_DOCKERFILE_ACTIVATE=1
 
 
