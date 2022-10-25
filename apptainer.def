@@ -5,7 +5,7 @@ Stage: spython-base
 %files
 . /tmp
 %post
-sed -i 's/name: fmesh/name: base/g' ./requirements.yml
+sed -i 's/name: fmesh/name: base/g' /tmp/requirements.yml
 micromamba install -f /tmp/requirements.yml
 MAMBA_DOCKERFILE_ACTIVATE=1
 
