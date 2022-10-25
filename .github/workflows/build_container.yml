@@ -42,7 +42,7 @@ jobs:
           # Write Singularity file
           spython recipe Dockerfile &> Singularity.def
       - name: Install Singularity
-        uses: FESOM/setup-singularity
+        uses: FESOM/setup-singularity@v1.0.0
         with:
           singularity-version: 3.8.7
       - name: Build Singularity Container
