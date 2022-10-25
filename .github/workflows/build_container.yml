@@ -29,8 +29,10 @@ jobs:
         uses: docker/build-push-action@v3
         with:
           push: true
+          # I would rather use github.repository as the name derived here to make it recycleable.  
+          # 
           # Maybe a bad idea to always overload the :latest tag
-          tags: ${{ github.repository }}:latest  
+          tags: fesom/fmesh:latest  
   apptainer:  # Former name of singularity
     runs-on: ubuntu-latest
     steps:
