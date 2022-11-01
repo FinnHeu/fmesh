@@ -245,7 +245,7 @@ def read_coastlines2(min_length=50, averaging=2, limits=[-180, 180, -90, 90]):
                                  (y >= limits[2]) & (y <= limits[3]))[0]
             
             printProgressBar(count+1, len(lon_subset), 
-                             prefix = f'coastline element #{count+1} out of {len(lon_subset)}:', suffix = 'Complete', length = 50) 
+                             prefix = f'coastline element {count+1} out of {len(lon_subset)}:', suffix = 'Complete', length = 50) 
             
             x = x[positions]
             y = y[positions]
@@ -339,7 +339,7 @@ def printProgressBar (iteration, total, prefix = '', suffix = '', decimals = 1, 
     percent = ("{0:." + str(decimals) + "f}").format(100 * (iteration / float(total)))
     filledLength = int(length * iteration // total)
     bar = fill * filledLength + '-' * (length - filledLength)
-    print(f'\r{prefix} |{bar}| {percent}% {suffix}', end = printEnd)
+    print(f'\r{prefix} |{bar}| {percent}% {suffix}', end = printEnd, flush=True)
     # Print New Line on Complete
     if iteration == total: 
         print()

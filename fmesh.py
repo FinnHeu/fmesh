@@ -17,6 +17,7 @@ import jigsawpy
 import netCDF4 as nc
 import numpy as np
 import yaml
+import multiprocessing
 from fastkml import geometry, kml
 
 from utils import (gradapproach, inside_outside, interpolate_lonlat,
@@ -129,38 +130,73 @@ def bathymetry_adjustment(settings, latitudes, longitudes, result):
     return result
 
 
-# TRANSFORM COASTLINES FROM DEGREES TO RADIANS FOR PARAVIEW -------------------
-#     can be used not called and used inside of the TRIANFULATION function
+def init_multiprocessing(args):
+    global counter
+    counter = args
+    
 
-
-def add_coastline():
-
-    lon_coast, lat_coast = read_coastlines2(min_length=50000, averaging=50)
-
-    inp1 = []
-    inp2 = []
-
-    n = 0
-    for polygon in range(0, len(lon_coast)):
-        lons = lon_coast[polygon].tolist()
-        lats = lat_coast[polygon].tolist()
-
-        temp1 = [
-            ((lon * np.pi / 180, lat * np.pi / 180), 0)
-            for (lon, lat) in zip(lons, lats)
-        ]
-        inp1 = inp1 + temp1
-
-        temp2 = [
-            ((i + n, j + n), 0)
-            for (i, j) in zip(range(0, len(lons) - 1), range(1, len(lons)))
-        ]
-        temp2.append(((len(lons) - 1 + n, 0 + n), 0))
-        inp2 = inp2 + temp2
-
-        n += len(lons)
-
-    return inp1, inp2
+def inner(parameters):
+    
+    import geopy.distance as dist
+    
+    with counter.get_lock():
+        counter.value += 1
+    
+    result_at_lon = parameters[0]    
+    longitudes = parameters[1]
+    latitudes = parameters[2]
+    i = parameters[3]
+    grid_lon = parameters[4]
+    min_resolution = parameters[5]
+    max_distance = parameters[6]
+    lon_coast = parameters[7]
+    lat_coast = parameters[8]
+    
+    output = result_at_lon
+    
+    for j, grid_lat in enumerate(latitudes):
+        
+        if (grid_lat >- 85) & (grid_lat < 85):
+        
+            min_distance = 1e+10
+            d1 = max_distance/111
+            d2 = max_distance/111/np.cos(np.deg2rad(grid_lat))
+            variant = 1
+            if grid_lon - d2 < -180: variant = 2
+            if grid_lon + d2 > 180: variant = 3
+                        
+            for polygon in range(0, len(lon_coast)):
+                
+                if variant == 1:
+                    cut = np.where((lat_coast[polygon] >= grid_lat - d1) & \
+                                   (lat_coast[polygon] <= grid_lat + d1) & \
+                                   (lon_coast[polygon] >= grid_lon - d2) & \
+                                   (lon_coast[polygon] <= grid_lon + d2) )[0]
+                elif variant == 2:
+                    cut = np.where((lat_coast[polygon] >= grid_lat - d1) & \
+                                   (lat_coast[polygon] <= grid_lat + d1) & \
+                                   ((lon_coast[polygon] >= 360 + grid_lon - d2) | \
+                                    (lon_coast[polygon] <= grid_lon + d2)) )[0]
+                elif variant == 3:
+                    cut = np.where((lat_coast[polygon] >= grid_lat - d1) & \
+                                   (lat_coast[polygon] <= grid_lat + d1) & \
+                                   ((lon_coast[polygon] >= grid_lon - d2) | \
+                                    (lon_coast[polygon] <= grid_lon + d2 - 360)) )[0]
+                    
+                               
+                for y, x in zip(lat_coast[polygon][cut], lon_coast[polygon][cut]):
+                    distance = dist.distance((y, x),(grid_lat, grid_lon)).km 
+                    if distance < min_distance:
+                        min_distance = distance
+            
+            if min_distance < max_distance:        
+                output[j] = min_resolution + (result_at_lon[j] - min_resolution) * \
+                               min_distance / max_distance
+    
+    printProgressBar(counter.value, len(longitudes), 
+                     prefix = f'Progress:', suffix = 'Complete', length = 50) 
+    
+    return(i, output)
 
 
 # ADD LINEARLY INTERPOLATED RESOLUTIONS (BETWEEN "min_resolution" in km AT THE COAST
@@ -172,70 +208,31 @@ def add_coastline():
 def refine_along_coastlines(
     longitudes, latitudes, result, min_resolution, max_distance, min_length, averaging
 ):
-
+    
+    counter = multiprocessing.Value('i', 0)
+    proc_num = multiprocessing.cpu_count()
+  
+    print('')    
+    print(f'preparing smoothed coastlines')
+    
     lon_coast, lat_coast = read_coastlines2(min_length=min_length, averaging=averaging)
+    
+    print('')    
+    print(f'refining along coastlines on multiple ({proc_num}) CPUs')
 
-    print("")
-    print("refining along coastlines")
+    parameters = tuple([
+        (np.squeeze(result[:, i]), longitudes, latitudes, i, grid_lon,
+         min_resolution, max_distance, lon_coast, lat_coast)
+        for i, grid_lon in enumerate(longitudes)
+        ])
+    
+    pool = multiprocessing.Pool(processes=proc_num, initializer=init_multiprocessing, 
+                                initargs = (counter, ))
+    temp_results = pool.map(inner, parameters)
+    pool.close()
 
-    for i, grid_lon in enumerate(longitudes):
-
-        printProgressBar(
-            i + 1, len(longitudes), prefix=f"Progress:", suffix="Complete", length=50
-        )
-
-        for j, grid_lat in enumerate(latitudes):
-
-            if (grid_lat > -85) & (grid_lat < 85):
-
-                min_distance = 1e10
-                d1 = max_distance / 111
-                d2 = max_distance / 111 / np.cos(np.deg2rad(grid_lat))
-                variant = 1
-                if grid_lon - d2 < -180:
-                    variant = 2
-                if grid_lon + d2 > 180:
-                    variant = 3
-
-                for polygon in range(0, len(lon_coast)):
-
-                    if variant == 1:
-                        cut = np.where(
-                            (lat_coast[polygon] >= grid_lat - d1)
-                            & (lat_coast[polygon] <= grid_lat + d1)
-                            & (lon_coast[polygon] >= grid_lon - d2)
-                            & (lon_coast[polygon] <= grid_lon + d2)
-                        )[0]
-                    elif variant == 2:
-                        cut = np.where(
-                            (lat_coast[polygon] >= grid_lat - d1)
-                            & (lat_coast[polygon] <= grid_lat + d1)
-                            & (
-                                (lon_coast[polygon] >= 360 + grid_lon - d2)
-                                | (lon_coast[polygon] <= grid_lon + d2)
-                            )
-                        )[0]
-                    elif variant == 3:
-                        cut = np.where(
-                            (lat_coast[polygon] >= grid_lat - d1)
-                            & (lat_coast[polygon] <= grid_lat + d1)
-                            & (
-                                (lon_coast[polygon] >= grid_lon - d2)
-                                | (lon_coast[polygon] <= grid_lon + d2 - 360)
-                            )
-                        )[0]
-
-                    for y, x in zip(lat_coast[polygon][cut], lon_coast[polygon][cut]):
-                        distance = dist.distance((y, x), (grid_lat, grid_lon)).km
-                        if distance < min_distance:
-                            min_distance = distance
-
-                if min_distance < max_distance:
-
-                    result[j, i] = (
-                        min_resolution
-                        + (result[j, i] - min_resolution) * min_distance / max_distance
-                    )
+    for temp in temp_results:
+        result[:, temp[0]] = temp[1]   
 
     return result
 
@@ -277,9 +274,14 @@ def refine(region, longitudes, latitudes, result):
         min_lon = -180
         max_lon = 180
 
-    if abs(max_lon + min_lon) < 20:
-        min_lon = -40
-        max_lon = 40
+    variant = 1
+
+    if max_lon > 180:
+        variant = 2
+        index = np.where(poly_out[0] > 180)[0]
+        poly_out[0][index] = poly_out[0][index] - 360
+        max_lon = np.min(poly_out[0][poly_out[0] > 0])
+        min_lon = np.max(poly_out[0][poly_out[0] < 0])
 
     print("")
     print(region["name"])
@@ -295,7 +297,10 @@ def refine(region, longitudes, latitudes, result):
 
         for j, grid_lat in enumerate(latitudes):
 
-            if (min_lon <= grid_lon <= max_lon) & (min_lat <= grid_lat <= max_lat):
+            if ((variant == 1) & (min_lon <= grid_lon <= max_lon) & 
+                (min_lat <= grid_lat <= max_lat)) | \
+                ((variant == 2) & (max_lon <= grid_lon) & (min_lat <= grid_lat <= max_lat)) | \
+                ((variant == 2) & (min_lon >= grid_lon) & (min_lat <= grid_lat <= max_lat)):
 
                 proj_work = ccrs.Orthographic(
                     central_longitude=grid_lon, central_latitude=grid_lat
@@ -459,7 +464,6 @@ def define_resolutions(settings):
         regions[-1]["precision"] = reg["precision"]
 
     # refining
-    print(regions)
     for region in regions:
         result = refine(region, longitudes, latitudes, result)
 
