@@ -41,7 +41,17 @@ in the `fmesh` directory.
 
 ## Container Usage
 
-... tbd ...
+For `singularity`, you can run the image directly:
+
+```
+$ singularity run oras://ghcr.io/FESOM/fmesh.sif:latest
+```
+
+A similar approach can be done for `docker`
+
+```
+$ docker run docker://ghcr.io/FESOM/fmesh:latest
+```
 
 ## Configuration
 
