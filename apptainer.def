@@ -11,6 +11,6 @@ MAMBA_DOCKERFILE_ACTIVATE=1
 
 
 %runscript
-exec /opt/conda/bin/python /tmp/fmesh.py "$@"
+exec /opt/conda/bin/python fmesh.py "$@"
 %startscript
-exec /opt/conda/bin/python /tmp/fmesh.py "$@"
+exec /opt/conda/bin/python fmesh.py "$@"
