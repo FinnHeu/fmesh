@@ -55,8 +55,8 @@ jobs:
         uses: eWaterCycle/setup-apptainer@v1.0.1
       - name: Build Apptainer Container
         run: |
-          apptainer build ${GITHUB_REPOSITORY}.sif apptainer.def 
+          apptainer build fmesh.sif apptainer.def 
       # Probably need to authenticate first...
       - name: Push Container 
         run: 
-          apptainer push ${GITHUB_REPOSITORY}.sif library://FESOM/fmesh/${GITHUB_REPOSITORY}.sif:latest 
+          apptainer push fmesh.sif library://FESOM/fmesh/${GITHUB_REPOSITORY}.sif:latest 
