@@ -58,7 +58,8 @@ jobs:
           apptainer build fmesh.sif apptainer.def 
       - name: Push Container 
         run: |
-          apptainer remote login docker://ghcr.io
+          # It is supposed to respect the env variable directly. The docs must be wrong...
+          apptainer remote login --username ${APPTAINER_DOCKER_USERNAME} docker://ghcr.io
           apptainer push fmesh.sif oras://${GITHUB_REPOSITORY}.sif:latest 
         env:
           APPTAINER_DOCKER_USERNAME: ${{ github.actor }}
