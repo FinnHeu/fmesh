@@ -59,7 +59,8 @@ jobs:
       - name: Push Container 
         run: |
           apptainer remote login -u $APPTAINER_GHCR_USERNAME -p $APPTAINER_GHCR_PASSWORD docker://ghcr.io
-          apptainer push fmesh.sif oras://${GITHUB_REPOSITORY}.sif:latest 
+          echo "Running push:"
+          echo "apptainer push fmesh.sif oras://${GITHUB_REPOSITORY}.sif:latest"
         env:
           APPTAINER_GHCR_USERNAME: ${{ github.actor }}
           APPTAINER_GHCR_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
