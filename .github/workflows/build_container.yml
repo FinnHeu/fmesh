@@ -56,7 +56,9 @@ jobs:
       - name: Build Apptainer Container
         run: |
           apptainer build fmesh.sif apptainer.def 
-      # Probably need to authenticate first...
       - name: Push Container 
-        run: 
-          apptainer push fmesh.sif library://FESOM/fmesh/${GITHUB_REPOSITORY}.sif:latest 
+        run:
+          export APPTAINER_DOCKER_USERNAME=${GITHUB_ACTOR}
+          export APPTAINER_DOCKER_PASSWORD=${GITHUB_TOKEN}
+          apptainer remote login docker://ghcr.io
+          apptainer push fmesh.sif library://${GITHUB_REPOSITORY}.sif:latest 
