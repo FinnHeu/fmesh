@@ -1,0 +1,16 @@
+Bootstrap: docker
+From: mambaorg/micromamba
+Stage: spython-base
+
+%files
+. 
+%post
+sed -i 's/name: fmesh/name: base/g' ./requirements.yml
+micromamba install -f ./requirements.yml
+MAMBA_DOCKERFILE_ACTIVATE=1
+
+
+%runscript
+exec /opt/conda/bin/python fmesh.py "$@"
+%startscript
+exec /opt/conda/bin/python fmesh.py "$@"

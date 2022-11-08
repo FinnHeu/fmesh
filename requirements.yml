@@ -1,4 +1,5 @@
 name: fmesh
+
 channels:
   - conda-forge
 dependencies:
@@ -10,7 +11,9 @@ dependencies:
   - cmake
   - geopy
   - pyyaml
-  # - lxml
+  - jigsaw
+  - jigsawpy
+  - lxml
 
 
 
