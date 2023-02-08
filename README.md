@@ -62,7 +62,8 @@ The process of mesh creation is split into several steps, that you can configure
 The main step is defining your base resolution at a principal grid. The first step is to set the number of latitudinal and longitudinal lines in the grid. A larger number of lines is required for the FESOM2 mesh with high resolution in certain regions (i.e. along coasts or within narrow straits). The general rule is to reach such a density of grid lines that quite a few grid nodes will happen to be within those regions.
 Below is the example of refinement in the equatorial Atlantic with two different principal grids – 0.5 degree (360x720 lines) and 6 degrees (30x60 lines):
 
-<figure to upload>
+![example4](https://user-images.githubusercontent.com/63430763/217646008-36b67581-b648-4804-949b-b0f35117c7d8.jpg)
+
   
 For defining base resolution in the nodes of principal grid there are two options:
 - constant resolution (`do_mercator_refinement: false`)
@@ -90,8 +91,10 @@ The easiest way to create paths is to use Google Earth, and path tool. The paths
 
 The program applies all regions successively. Therefore, it is important to control an order of regions in your configuration file. The dependence of the final resolution from the order is demonstrated below.
 
-<figure to upload>
-<figure to upload>
+![example1](https://user-images.githubusercontent.com/63430763/217646109-7a6aab72-394e-471c-85d8-4910334b7618.jpg)
+
+![example2](https://user-images.githubusercontent.com/63430763/217646148-fea928fd-aa67-4445-9986-f9074a3ed036.jpg)
+
 
 ### Select a region for a control plotting
 
