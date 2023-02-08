@@ -93,12 +93,6 @@ The program applies all regions successively. Therefore, it is important to cont
 <figure to upload>
 <figure to upload>
 
-There is an additional parameters which may be set for each region:
-- `precision` each section of polygon will by split in `precision` number of
-  times, to make the linear interpolation more precise. Using 10 is a good default value. See the difference between the final resolution maps for precision=10 and precision=3. 
-
-<figure to upload>
-
 ### Select a region for a control plotting
 
 If the parameter `do_plotting` is set to true, the program also creates two figures showing the resulting mesh (“_mesh.jpg”) and depths (“_depths.jpg”) within a region of interests limited by `min_lat`, `min_lon`, `max_lat` and `max_lon`. Be aware of using an appropriate cartopy projection name set by projection parameter and try to avoid depicting areas with very large amount of nodes. Otherwise, it may take long time to plot these figures.
@@ -106,7 +100,7 @@ If the parameter `do_plotting` is set to true, the program also creates two figu
 ### Using pre-calculated meshes 
 
 There are two options to fasten calculations, especially during testing any changes in the program code.
-By setting `use_existed_refinements` true, you may skip the refinements along coastlines and within regions with refined resolutions. A “_result_temp.pkl” file created before has to exist. Otherwise, the program will ignore this flag and refine the resolutions on the globe from a scratch.
+By setting `use_existed_refinements` true, you may skip all refinements (bathimetric, along coastlines and within regions with refined resolutions). A “_result_temp.pkl” file created before has to exist. Otherwise, the program will ignore this flag and refine the resolutions on the globe from a scratch.
 By setting `use_existed_jigsaw_mesh` true, you may skip calling jigsaw mesh generator. A “_mesh_temp.pkl” file created before has to exist. Otherwise, the program will ignore this flag and the jigsaw mesh generator will be called.
   
 ### Set vertical levels
