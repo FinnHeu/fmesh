@@ -1,35 +1,71 @@
 
-topo_path: "./topo/RTopo-2.0.1_30sec_bos_fix_lowres_D3.nc" # path to topography
-n_latitudes: 180 # number of latitudes (one will be added)
-n_longitudes: 360 # number of longitudes (one will be added)
-base_resolution: 300 # resolution at equator
+topo_path: "./topo/depths.nc" # path to topography
+n_latitudes: 2880 # number of latitudes (one will be added)
+n_longitudes: 1001 # number of longitudes (one will be added)
+base_resolution: 55 # resolution at equator, km
+
+use_existed_refinements: false
+
+use_existed_jigsaw_mesh: false
 
 mercator_resolution:
-    do_mercator_refinement: false
-    norhtern_boundary: 77
-    norhtern_lowest_resolution: 25
-    southern_boundary: -50
-    southern_lowest_resolution: 25
+    do_mercator_refinement: true
+    norhtern_boundary: 60
+    norhtern_lowest_resolution: 22.5    
+    southern_boundary: -60
+    southern_lowest_resolution: 22.5
 
 refine_along_coastlines:
     do_refine_along_coastlines: false
     min_resolution: 10      # km, resolution at the coast 
-    max_distance: 50      # km, distance from the coast
-    min_length: 200        # km, min length of coastline
-    averaging: 25          # km, smoothing coastline
+    max_distance: 100      # km, distance from the coast
+    min_length: 500        # km, min length of coastline
+    averaging: 50          # km, smoothing coastline
+
+refine_over_bathymetry:
+    do_refine_over_bathymetry: false
+    min_depth: 50      # meters
+    min_resolution: 5  # km
+    max_depth: 1500     # the base resolution won't be altered starting from this depth  
+
+do_refine_within_regions: true
 
 regions:
-    - name: Denmark
-      path: './kml/Denmark.kml' # path to the .kml file
-      resolution: 100 # resolution of the inner region
-      precision: 10 # each section of polygon will by splitted in `precision` nuber of times
-      order: true # If True, fist polygon is internal and second is external. I False, then other way round. 
-    - name: Gibraltar
-      path: './kml/Gibraltar.kml'
-      resolution: 100
-      precision: 10
-      order: true
+    - name: Baffin
+      path: './kml_Jones/Baffin.kml'
+      resolution: 10
+    - name: Hudson
+      path: './kml_Jones/Hudson.kml' # path to the .kml file
+      resolution: 5 # resolution of the inner region
+    - name: CAA
+      path: './kml_Jones/CAA.kml'
+      resolution: 2
+    - name: Cardigan
+      path: './kml_Jones/Cardigan.kml'
+      resolution: 0.5
+    - name: Nares
+      path: './kml_Jones/Nares.kml'
+      resolution: 1
+    - name: Fury
+      path: './kml_Jones/Fury.kml'
+      resolution: 0.3
+    - name: Eclipse
+      path: './kml_Jones/Eclipse.kml'
+      resolution: 0.7
+    - name: Inglefield
+      path: './kml_Jones/Inglefield.kml'
+      resolution: 0.7
 
+plot_region:
+    do_plotting: true
+    min_lat: 69.55
+    max_lat: 70.10
+    min_lon: -86.7
+    max_lon: -81.5
+    projection: 'NorthPolarStereo'
+    central_longitude: -84.0
+
+minimum_depth: 30 # the minimum allowed depth in any node (positive (!) value in meters)
 
 levels: [0.0, -5.0, -10.0, -15.0, -20.0, -25.0, -30.0, -35.0, 
         -40.0, -45.0, -50.0, -55.0, -60.0, -65.0, -70.0, -75.0,
