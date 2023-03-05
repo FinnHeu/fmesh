@@ -1,0 +1,8 @@
+*.jpg
+*.vtk
+*.pkl
+elem2d.out
+aux3d.out
+.DS_Store
+*.pyc
+__pycache__
