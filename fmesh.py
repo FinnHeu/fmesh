@@ -69,7 +69,7 @@ def plotting(lon, lat, triangles, depths, coastnode, settings):
 
     fig = plt.figure(figsize=(15, 15))
     ax = plt.axes(projection=proj_work)
-    ax.set_extent(domain, crs=ccrs.PlateCarree())
+    ax.set_extent(domain, crs=ccrs.Geodetic())
     ax.gridlines(draw_labels=True, xlocs=None, ylocs=None)
     ax.hold_limits()
 
@@ -114,7 +114,7 @@ def plotting(lon, lat, triangles, depths, coastnode, settings):
 
     fig = plt.figure(figsize=(15, 15))
     ax = plt.axes(projection=proj_work)
-    ax.set_extent(domain, crs=ccrs.PlateCarree())
+    ax.set_extent(domain, crs=ccrs.Geodetic())
     ax.gridlines(draw_labels=True, xlocs=None, ylocs=None)
     ax.hold_limits()
 
