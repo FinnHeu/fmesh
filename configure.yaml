@@ -63,13 +63,13 @@ regions:
     #   resolution: 0.7
 
 plot_region:
-    do_plotting: false
-    min_lat: 69.55
-    max_lat: 70.10
-    min_lon: -86.7
-    max_lon: -81.5
+    do_plotting: true
+    min_lat: 60
+    max_lat: 90
+    min_lon: -180
+    max_lon: 180
     projection: 'NorthPolarStereo'
-    central_longitude: -84.0
+    central_longitude: 0
 
 minimum_depth: 30 # the minimum allowed depth in any node (positive (!) value in meters)
 
