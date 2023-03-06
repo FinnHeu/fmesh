@@ -23,132 +23,183 @@ import geopy.distance as dist
 
 from fastkml import geometry, kml
 from pathlib import Path
-from utils import (gradapproach, inside_outside, interpolate_lonlat,
-                   printProgressBar, read_coastlines2)
+from utils import (
+    gradapproach,
+    inside_outside,
+    interpolate_lonlat,
+    printProgressBar,
+    read_coastlines2,
+)
 
 
 def plotting(lon, lat, triangles, depths, coastnode, settings):
-    
-    domain=[  
-        settings["plot_region"]["min_lon"], settings["plot_region"]["max_lon"], 
-        settings["plot_region"]["min_lat"], settings["plot_region"]["max_lat"] ]
-    
-    proj_work = ccrs.__dict__[ settings["plot_region"]["projection"] ] \
-                 (central_longitude= settings["plot_region"]["central_longitude"])
-    
-    
-    active_nodes = np.where((domain[0] < lon) & (lon < domain[1]) & \
-                            (domain[2] < lat) & (lat < domain[3]) & \
-                            (depths > 0)     )[0]
-    
+
+    domain = [
+        settings["plot_region"]["min_lon"],
+        settings["plot_region"]["max_lon"],
+        settings["plot_region"]["min_lat"],
+        settings["plot_region"]["max_lat"],
+    ]
+
+    proj_work = ccrs.__dict__[settings["plot_region"]["projection"]](
+        central_longitude=settings["plot_region"]["central_longitude"]
+    )
+
+    active_nodes = np.where(
+        (domain[0] < lon)
+        & (lon < domain[1])
+        & (domain[2] < lat)
+        & (lat < domain[3])
+        & (depths > 0)
+    )[0]
+
     temp_set = set(active_nodes)
-       
-    active_elements = [n for n in range(0, len(triangles))
-                           if ((triangles[n][0] in temp_set)
-                             & (triangles[n][1] in temp_set)
-                             & (triangles[n][2] in temp_set))
-                            ]
-    
+
+    active_elements = [
+        n
+        for n in range(0, len(triangles))
+        if (
+            (triangles[n][0] in temp_set)
+            & (triangles[n][1] in temp_set)
+            & (triangles[n][2] in temp_set)
+        )
+    ]
+
     # PLOT MESH
-    
+
     fig = plt.figure(figsize=(15, 15))
     ax = plt.axes(projection=proj_work)
-    ax.set_extent(domain)
+    ax.set_extent(domain, crs=ccrs.Geodetic())
     ax.gridlines(draw_labels=True, xlocs=None, ylocs=None)
     ax.hold_limits()
-    
+
     for triangle in triangles[active_elements]:
-        plt.fill( [ lon[triangle[0]], lon[triangle[1]], lon[triangle[2]], lon[triangle[0]] ],
-                  [ lat[triangle[0]], lat[triangle[1]], lat[triangle[2]], lat[triangle[0]] ], 
-                    linewidth=0.1, edgecolor='g', facecolor='g', alpha=0.2, transform=ccrs.Geodetic())   
-    
+        plt.fill(
+            [lon[triangle[0]], lon[triangle[1]], lon[triangle[2]], lon[triangle[0]]],
+            [lat[triangle[0]], lat[triangle[1]], lat[triangle[2]], lat[triangle[0]]],
+            linewidth=0.1,
+            edgecolor="g",
+            facecolor="g",
+            alpha=0.2,
+            transform=ccrs.Geodetic(),
+        )
+
     lon_p = lon[active_nodes]
     lat_p = lat[active_nodes]
     coastnode_p = coastnode[active_nodes]
-    
-    plt.plot(lon_p, lat_p, 'o', markerfacecolor='g', markeredgewidth=0, markersize=0.75, transform=ccrs.Geodetic())
+
+    plt.plot(
+        lon_p,
+        lat_p,
+        "o",
+        markerfacecolor="g",
+        markeredgewidth=0,
+        markersize=0.75,
+        transform=ccrs.Geodetic(),
+    )
     index = np.where(coastnode_p == 1)[0]
-    plt.plot(lon_p[index], lat_p[index], 'o', markerfacecolor='b', markeredgewidth=0, markersize=1.00, transform=ccrs.Geodetic())
-        
-    plt.savefig('_mesh.jpg', dpi=600, format='jpg')
-    
-    
+    plt.plot(
+        lon_p[index],
+        lat_p[index],
+        "o",
+        markerfacecolor="b",
+        markeredgewidth=0,
+        markersize=1.00,
+        transform=ccrs.Geodetic(),
+    )
+
+    plt.savefig("_mesh.jpg", dpi=600, format="jpg")
+
     # PLOT DEPTHS
-    
+
     fig = plt.figure(figsize=(15, 15))
     ax = plt.axes(projection=proj_work)
-    ax.set_extent(domain)
+    ax.set_extent(domain, crs=ccrs.Geodetic())
     ax.gridlines(draw_labels=True, xlocs=None, ylocs=None)
     ax.hold_limits()
-    
-    ind = {n:index for index, n in enumerate(active_nodes)} 
-    
+
+    ind = {n: index for index, n in enumerate(active_nodes)}
+
     triangles_subset = triangles[active_elements]
     for index, j in enumerate(triangles_subset):
-        for i in (0,1,2):
-            triangles_subset[index, i] = ind[j[i]]    
-    
+        for i in (0, 1, 2):
+            triangles_subset[index, i] = ind[j[i]]
+
     triangles_subset = [list(tria) for tria in triangles_subset]
-    
+
     triang = mtri.Triangulation(lon[active_nodes], lat[active_nodes], triangles_subset)
-    
-    contourf = ax.tricontourf(triang, depths[active_nodes], transform=ccrs.Geodetic(), 
-                                cmap = cmp.jet)
-    
-    cax = fig.add_axes([ax.get_position().x1+0.01, ax.get_position().y0, 0.02,ax.get_position().height])
-    plt.colorbar(contourf, cax=cax, orientation='vertical', pad=0.03,)
-    
-    plt.savefig('_depths.jpg', dpi=600, format='jpg')
-    
-    
-def find_closest_point_of_polygon(x, y, x_poly, y_poly):    
-    
+
+    contourf = ax.tricontourf(
+        triang, depths[active_nodes], transform=ccrs.Geodetic(), cmap=cmp.jet
+    )
+
+    cax = fig.add_axes(
+        [
+            ax.get_position().x1 + 0.01,
+            ax.get_position().y0,
+            0.02,
+            ax.get_position().height,
+        ]
+    )
+    plt.colorbar(
+        contourf,
+        cax=cax,
+        orientation="vertical",
+        pad=0.03,
+    )
+
+    plt.savefig("_depths.jpg", dpi=600, format="jpg")
+
+
+def find_closest_point_of_polygon(x, y, x_poly, y_poly):
+
     distance_to_poly = 1e10
-        
+
     for index in range(0, len(x_poly) - 1):
-            
+
         distance_1 = np.sqrt((x_poly[index] - x) ** 2 + (y_poly[index] - y) ** 2)
         if distance_1 < distance_to_poly:
-           (nearest_xp, nearest_yp) = (x_poly[index], y_poly[index])
-           distance_to_poly = distance_1
-            
-        
-        if x_poly[index+1] - x_poly[index] != 0:
-            a = (y_poly[index+1] - y_poly[index])/(x_poly[index+1] - x_poly[index])
+            (nearest_xp, nearest_yp) = (x_poly[index], y_poly[index])
+            distance_to_poly = distance_1
+
+        if x_poly[index + 1] - x_poly[index] != 0:
+            a = (y_poly[index + 1] - y_poly[index]) / (
+                x_poly[index + 1] - x_poly[index]
+            )
             b = y_poly[index] - a * x_poly[index]
         else:
             a = np.nan
-            
-        
+
         if not np.isnan(a):
             if a != 0:
-                xp = (y + x / a - b) / (a + 1/a)
-                
+                xp = (y + x / a - b) / (a + 1 / a)
+
             else:
                 xp = x
-                
+
             yp = a * xp + b
-        
+
         else:
             xp = x_poly[index]
             yp = y
-            
-            
+
         distance_2 = np.sqrt((x - xp) ** 2 + (y - yp) ** 2)
-        if (distance_2 < distance_to_poly) and (0 < (xp - x_poly[index])/(x_poly[index+1] - x_poly[index]) < 1):
-           (nearest_xp, nearest_yp) = (xp, yp)
-           distance_to_poly = distance_2
-               
+        if (distance_2 < distance_to_poly) and (
+            0 < (xp - x_poly[index]) / (x_poly[index + 1] - x_poly[index]) < 1
+        ):
+            (nearest_xp, nearest_yp) = (xp, yp)
+            distance_to_poly = distance_2
+
     return nearest_xp, nearest_yp, distance_to_poly
-            
+
 
 def create_tria_in_node_dictionary(triangles):
-    
+
     """
-    Creating a dictionary of nodes with indices of linked elements 
+    Creating a dictionary of nodes with indices of linked elements
     i.e. { 0: [123, 0, 45, 345], ..., 234: [23, 24, 265, 4350, 4352], etc. }
     """
-    
+
     tria_in_node = {}
     for n, triangle in enumerate(triangles):
         if triangle[0] > -1:
@@ -217,14 +268,17 @@ def from_kml(file, order=True):
                     else:
                         outer = [lon, lat]
 
-        proj_work = ccrs.Stereographic(central_longitude=internal[0][0], 
-                                       central_latitude=internal[1][0])
-        x, y = proj_work.transform_point(internal[0][0], internal[1][0], ccrs.Geodetic())
+        proj_work = ccrs.Stereographic(
+            central_longitude=internal[0][0], central_latitude=internal[1][0]
+        )
+        x, y = proj_work.transform_point(
+            internal[0][0], internal[1][0], ccrs.Geodetic()
+        )
         (x_out, y_out, _) = np.hsplit(
             proj_work.transform_points(ccrs.Geodetic(), outer[0], outer[1]), 3
         )
         if inside_outside(x_out, y_out, x, y) == 3:
-            
+
             internal, outer = outer, internal
 
     return internal, outer
@@ -238,7 +292,7 @@ def bathymetry_adjustment(settings, latitudes, longitudes, result):
 
     print("")
     print("adjusting resolutions over bathymetry")
-    
+
     topo = Find_topo(settings)
 
     for j, lat in enumerate(latitudes):
@@ -254,49 +308,53 @@ def bathymetry_adjustment(settings, latitudes, longitudes, result):
             if depth > 0:
                 pass
             elif depth >= -settings["refine_over_bathymetry"]["min_depth"]:
-                
+
                 result[j, i] = settings["refine_over_bathymetry"]["min_resolution"]
-                
+
             elif depth >= -settings["refine_over_bathymetry"]["max_depth"]:
-                
-                result[j, i] = settings["refine_over_bathymetry"]["min_resolution"] +       \
-                    (result[j, i] - settings["refine_over_bathymetry"]["min_resolution"]) * \
-                    (abs(depth) - settings["refine_over_bathymetry"]["min_depth"])/         \
-                    (settings["refine_over_bathymetry"]["max_depth"] - settings["refine_over_bathymetry"]["min_depth"])     
-                
+
+                result[j, i] = settings["refine_over_bathymetry"]["min_resolution"] + (
+                    result[j, i] - settings["refine_over_bathymetry"]["min_resolution"]
+                ) * (abs(depth) - settings["refine_over_bathymetry"]["min_depth"]) / (
+                    settings["refine_over_bathymetry"]["max_depth"]
+                    - settings["refine_over_bathymetry"]["min_depth"]
+                )
+
     return result
 
 
 def estimate_number_of_nodes(result, longitudes, latitudes):
-    
+
     total = 0
-    
+
     dlat = abs(latitudes[1] - latitudes[0])
     dlon = abs(longitudes[1] - longitudes[0])
-    
+
     for j, lat in enumerate(latitudes):
         for i, lon in enumerate(longitudes):
             area = dlat * 111 * dlon * 111 * np.cos(np.deg2rad(lat))
             element_area = 0.7 * (result[j, i] ** 2) / 2
-            total += area/element_area
-    
+            total += area / element_area
+
     print("")
-    print(f'The estimated # of elements to build with jigsaw (including land) is { np.round(total).astype(int)}')
-    
+    print(
+        f"The estimated # of elements to build with jigsaw (including land) is { np.round(total).astype(int)}"
+    )
+
     return
 
 
 def init_multiprocessing(args):
     global counter
     counter = args
-    
+
 
 def inner(parameters):
-    
+
     with counter.get_lock():
         counter.value += 1
-    
-    result_at_lon = parameters[0]    
+
+    result_at_lon = parameters[0]
     longitudes = parameters[1]
     latitudes = parameters[2]
     i = parameters[3]
@@ -305,52 +363,66 @@ def inner(parameters):
     max_distance = parameters[6]
     lon_coast = parameters[7]
     lat_coast = parameters[8]
-    
+
     output = result_at_lon
-    
+
     for j, grid_lat in enumerate(latitudes):
-        
-        if (grid_lat >- 85) & (grid_lat < 85):
-        
-            min_distance = 1e+10
-            d1 = max_distance/111
-            d2 = max_distance/111/np.cos(np.deg2rad(grid_lat))
+
+        if (grid_lat > -85) & (grid_lat < 85):
+
+            min_distance = 1e10
+            d1 = max_distance / 111
+            d2 = max_distance / 111 / np.cos(np.deg2rad(grid_lat))
             variant = 1
-            if grid_lon - d2 < -180: variant = 2
-            if grid_lon + d2 > 180: variant = 3
-                        
+            if grid_lon - d2 < -180:
+                variant = 2
+            if grid_lon + d2 > 180:
+                variant = 3
+
             for polygon in range(0, len(lon_coast)):
-                
+
                 if variant == 1:
-                    cut = np.where((lat_coast[polygon] >= grid_lat - d1) & \
-                                   (lat_coast[polygon] <= grid_lat + d1) & \
-                                   (lon_coast[polygon] >= grid_lon - d2) & \
-                                   (lon_coast[polygon] <= grid_lon + d2) )[0]
+                    cut = np.where(
+                        (lat_coast[polygon] >= grid_lat - d1)
+                        & (lat_coast[polygon] <= grid_lat + d1)
+                        & (lon_coast[polygon] >= grid_lon - d2)
+                        & (lon_coast[polygon] <= grid_lon + d2)
+                    )[0]
                 elif variant == 2:
-                    cut = np.where((lat_coast[polygon] >= grid_lat - d1) & \
-                                   (lat_coast[polygon] <= grid_lat + d1) & \
-                                   ((lon_coast[polygon] >= 360 + grid_lon - d2) | \
-                                    (lon_coast[polygon] <= grid_lon + d2)) )[0]
+                    cut = np.where(
+                        (lat_coast[polygon] >= grid_lat - d1)
+                        & (lat_coast[polygon] <= grid_lat + d1)
+                        & (
+                            (lon_coast[polygon] >= 360 + grid_lon - d2)
+                            | (lon_coast[polygon] <= grid_lon + d2)
+                        )
+                    )[0]
                 elif variant == 3:
-                    cut = np.where((lat_coast[polygon] >= grid_lat - d1) & \
-                                   (lat_coast[polygon] <= grid_lat + d1) & \
-                                   ((lon_coast[polygon] >= grid_lon - d2) | \
-                                    (lon_coast[polygon] <= grid_lon + d2 - 360)) )[0]
-                    
-                               
+                    cut = np.where(
+                        (lat_coast[polygon] >= grid_lat - d1)
+                        & (lat_coast[polygon] <= grid_lat + d1)
+                        & (
+                            (lon_coast[polygon] >= grid_lon - d2)
+                            | (lon_coast[polygon] <= grid_lon + d2 - 360)
+                        )
+                    )[0]
+
                 for y, x in zip(lat_coast[polygon][cut], lon_coast[polygon][cut]):
-                    distance = dist.distance((y, x),(grid_lat, grid_lon)).km 
+                    distance = dist.distance((y, x), (grid_lat, grid_lon)).km
                     if distance < min_distance:
                         min_distance = distance
-            
-            if min_distance < max_distance:        
-                output[j] = min_resolution + (result_at_lon[j] - min_resolution) * \
-                               min_distance / max_distance
-    
-    printProgressBar(counter.value, len(longitudes), 
-                     prefix = 'Progress:', suffix = 'Complete', length = 50) 
-    
-    return(i, output)
+
+            if min_distance < max_distance:
+                output[j] = (
+                    min_resolution
+                    + (result_at_lon[j] - min_resolution) * min_distance / max_distance
+                )
+
+    printProgressBar(
+        counter.value, len(longitudes), prefix="Progress:", suffix="Complete", length=50
+    )
+
+    return (i, output)
 
 
 # ADD LINEARLY INTERPOLATED RESOLUTIONS (BETWEEN "min_resolution" in km AT THE COAST
@@ -358,34 +430,47 @@ def inner(parameters):
 #      "min_length" is the minimum length of coatline in km used for calculations
 #      "averaging" is the smoothing parameter in km
 
+
 def refine_along_coastlines(
     longitudes, latitudes, result, min_resolution, max_distance, min_length, averaging
 ):
-    
-    counter = multiprocessing.Value('i', 0)
-    proc_num = multiprocessing.cpu_count()
-  
-    print('')    
-    print('preparing smoothed coastlines')
-    
-    lon_coast, lat_coast = read_coastlines2(min_length=min_length, averaging=averaging)
-    
-    print('')    
-    print(f'refining along coastlines on multiple ({proc_num}) CPUs')
 
-    parameters = tuple([
-        (np.squeeze(result[:, i]), longitudes, latitudes, i, grid_lon,
-         min_resolution, max_distance, lon_coast, lat_coast)
-        for i, grid_lon in enumerate(longitudes)
-        ])
-    
-    pool = multiprocessing.Pool(processes=proc_num, initializer=init_multiprocessing, 
-                                initargs = (counter, ))
+    counter = multiprocessing.Value("i", 0)
+    proc_num = multiprocessing.cpu_count()
+
+    print("")
+    print("preparing smoothed coastlines")
+
+    lon_coast, lat_coast = read_coastlines2(min_length=min_length, averaging=averaging)
+
+    print("")
+    print(f"refining along coastlines on multiple ({proc_num}) CPUs")
+
+    parameters = tuple(
+        [
+            (
+                np.squeeze(result[:, i]),
+                longitudes,
+                latitudes,
+                i,
+                grid_lon,
+                min_resolution,
+                max_distance,
+                lon_coast,
+                lat_coast,
+            )
+            for i, grid_lon in enumerate(longitudes)
+        ]
+    )
+
+    pool = multiprocessing.Pool(
+        processes=proc_num, initializer=init_multiprocessing, initargs=(counter,)
+    )
     temp_results = pool.map(inner, parameters)
     pool.close()
 
     for temp in temp_results:
-        result[:, temp[0]] = temp[1]   
+        result[:, temp[0]] = temp[1]
 
     return result
 
@@ -398,7 +483,8 @@ def refine(region, longitudes, latitudes, result):
     (poly_in, poly_out, resolution) = (
         region["Polygon inside"],
         region["Polygon outside"],
-        region["resolution"]  )
+        region["resolution"],
+    )
 
     min_lon = np.min(poly_out[0])
     max_lon = np.max(poly_out[0])
@@ -448,10 +534,23 @@ def refine(region, longitudes, latitudes, result):
 
         for j, grid_lat in enumerate(latitudes):
 
-            if ((variant == 1) & (min_lon <= grid_lon <= max_lon) & 
-                (min_lat <= grid_lat <= max_lat)) | \
-                ((variant == 2) & (max_lon <= grid_lon) & (min_lat <= grid_lat <= max_lat)) | \
-                ((variant == 2) & (min_lon >= grid_lon) & (min_lat <= grid_lat <= max_lat)):
+            if (
+                (
+                    (variant == 1)
+                    & (min_lon <= grid_lon <= max_lon)
+                    & (min_lat <= grid_lat <= max_lat)
+                )
+                | (
+                    (variant == 2)
+                    & (max_lon <= grid_lon)
+                    & (min_lat <= grid_lat <= max_lat)
+                )
+                | (
+                    (variant == 2)
+                    & (min_lon >= grid_lon)
+                    & (min_lat <= grid_lat <= max_lat)
+                )
+            ):
 
                 proj_work = ccrs.Stereographic(
                     central_longitude=grid_lon, central_latitude=grid_lat
@@ -474,13 +573,19 @@ def refine(region, longitudes, latitudes, result):
                     result[j, i] = resolution
 
                 elif abs(inside_outside(x_out, y_out, x, y)) < 3:
-                    
+
                     # DISTANCE TO THE INTERNAL CONTOUR
-                    _, _, distance_to_in = find_closest_point_of_polygon(x, y, x_in, y_in)
-                        
+                    _, _, distance_to_in = find_closest_point_of_polygon(
+                        x, y, x_in, y_in
+                    )
+
                     # DISTANCE TO THE EXTERNAL CONTOUR
-                    nearest_xp, nearest_yp, distance_to_out = find_closest_point_of_polygon(x, y, x_out, y_out)     
-                        
+                    (
+                        nearest_xp,
+                        nearest_yp,
+                        distance_to_out,
+                    ) = find_closest_point_of_polygon(x, y, x_out, y_out)
+
                     llon, llat = ccrs.Geodetic().transform_point(
                         nearest_xp, nearest_yp, proj_work
                     )
@@ -545,7 +650,7 @@ def define_resolutions(settings):
                 ]
 
     # refine resolution along coastlines
-    
+
     if settings["refine_along_coastlines"]["do_refine_along_coastlines"]:
 
         min_resolution = settings["refine_along_coastlines"]["min_resolution"]
@@ -563,33 +668,31 @@ def define_resolutions(settings):
             averaging=averaging,
         )
 
-    
     regions = []
-    
+
     if settings["do_refine_within_regions"]:
-        
+
         # create polygons from .kml files
-    
+
         for reg in settings["regions"]:
-            internal, outer = from_kml( reg["path"] )
+            internal, outer = from_kml(reg["path"])
             regions.append({})
             regions[-1]["name"] = reg["name"]
             regions[-1]["Polygon inside"] = internal[0], internal[1]
             regions[-1]["Polygon outside"] = outer[0], outer[1]
             regions[-1]["resolution"] = reg["resolution"]
             # regions[-1]["precision"] = reg["precision"]
-    
+
         # refining within the regions
-        
+
         for region in regions:
             result = refine(region, longitudes, latitudes, result)
 
     # bathymetry_adjustment()
-    
+
     if settings["refine_over_bathymetry"]["do_refine_over_bathymetry"]:
 
         result = bathymetry_adjustment(settings, latitudes, longitudes, result)
-        
 
     # saving
     with open("_result_temp.pkl", "wb") as file:
@@ -661,9 +764,9 @@ def triangulation(src_path, dst_path, longitudes, latitudes, result):
 
     jigsawpy.cmd.jigsaw(opts, mesh)
 
-    #print("")
-    #print("Saving .vtk file")
-    #jigsawpy.savevtk(os.path.join(dst_path, "_result.vtk"), mesh)
+    # print("")
+    # print("Saving .vtk file")
+    # jigsawpy.savevtk(os.path.join(dst_path, "_result.vtk"), mesh)
 
     # saving mesh file
     with open("_mesh_temp.pkl", "wb") as file:
@@ -676,7 +779,7 @@ def triangulation(src_path, dst_path, longitudes, latitudes, result):
 
 
 def cut_land(settings, mesh):
-    
+
     # TRANSFORMING CARTESIAN MESH TO LONGITUDES AND LATITUDES -----------------
 
     print("")
@@ -690,12 +793,11 @@ def cut_land(settings, mesh):
     coastnode = np.full(len(lon), 0)
     depths = np.full(len(lon), -1)
     triangles = np.copy(mesh.tria3["index"])
-    
 
     # CREATING DICTIONARY OF POINTS WITH INDICES OF LINKED TRIANGLES ----------
 
     tria_in_node = create_tria_in_node_dictionary(triangles)
-    
+
     # DELETING VERTICES WITH POSITIVE ELEVATIONS AND LINKED TRIANGLES ---------
 
     print("")
@@ -729,33 +831,29 @@ def cut_land(settings, mesh):
                 node + 1, len(lon), prefix=f"Progress:", suffix="Complete", length=50
             )
 
-        if depths[node] >= 0:                    # land
+        if depths[node] >= 0:  # land
             depths[node] = -1
             for j in tria_in_node[node]:
 
                 for i in (0, 1, 2):
                     if triangles[j, i] > -1:
                         coastnode[triangles[j, i]] = 1
-                
-                triangles[j, :] = -1
-                
-        elif depths[node] >= -settings["minimum_depth"]:        # shallow
-            depths[node] = settings["minimum_depth"]
-            
-        else:                                     # ocean
-            depths[node] = abs(depths[node])
 
-            
+                triangles[j, :] = -1
+
+        elif depths[node] >= -settings["minimum_depth"]:  # shallow
+            depths[node] = settings["minimum_depth"]
+
+        else:  # ocean
+            depths[node] = abs(depths[node])
 
     # DELETING "LOOSE" TRIANGLES ----------------------------------------------
 
     print("")
     print('deleting "loose" elements')
 
-    
     loose = True
     max_triangles = 6
-    
 
     while loose:
 
@@ -805,22 +903,20 @@ def cut_land(settings, mesh):
         else:
             loose = False
 
-# =============================================================================
-#     DELETE NARROWS: ELEMENTS WITH ALL NODES == COASTNODES
-#
-#     pass 
-# =============================================================================
-
+    # =============================================================================
+    #     DELETE NARROWS: ELEMENTS WITH ALL NODES == COASTNODES
+    #
+    #     pass
+    # =============================================================================
 
     for node in range(len(lon)):
         n = 0
         if node in tria_in_node:
             for tria in tria_in_node[node]:
-                if triangles[tria, 0] > -1: 
+                if triangles[tria, 0] > -1:
                     n += 1
         if n == 0:
             coastnode[node] = 0
-            
 
     # FIND A STARTING NODE NEAR (OE, 0N) in Atlantic Ocean --------------------
 
@@ -837,7 +933,7 @@ def cut_land(settings, mesh):
         active_triangles.append(i)
 
     dictionary = {}
-    number_of_oceanic_nodes = len(depths[depths>-1])
+    number_of_oceanic_nodes = len(depths[depths > -1])
 
     while active_triangles:
 
@@ -851,35 +947,37 @@ def cut_land(settings, mesh):
         active_triangles.pop()
         for j in tmp:
             active_triangles.append(j)
-        
-        if (len(dictionary) % 500 == 0):
+
+        if len(dictionary) % 500 == 0:
             printProgressBar(
-                len(dictionary), number_of_oceanic_nodes, 
-                prefix="Progress:", suffix="Complete", length=50
+                len(dictionary),
+                number_of_oceanic_nodes,
+                prefix="Progress:",
+                suffix="Complete",
+                length=50,
             )
-    
-    printProgressBar( 10, 10, prefix="Progress:", suffix="Complete", length=50)
-                    
+
+    printProgressBar(10, 10, prefix="Progress:", suffix="Complete", length=50)
+
     temp_set = set(dictionary)
 
-    indices = []    
+    indices = []
     for node in range(len(depths)):
         if node not in temp_set:
             depths[node] = -1
         else:
             indices.append(node)
-    
+
     if settings["plot_region"]["do_plotting"]:
         print("")
         print("preparing figures")
         plotting(lon, lat, triangles, depths, coastnode, settings)
-    
-    
+
     # PREPARING FINAL ARRAYS --------------------------------------------------
 
     print("")
     print("re-sorting elements and nodes")
-    
+
     lon_new = lon[indices]
     lat_new = lat[indices]
     depths_new = depths[indices]
@@ -963,7 +1061,7 @@ def cut_land(settings, mesh):
 
 
 def main():
-    with open("./configure_example.yaml") as file:
+    with open("./configure.yaml") as file:
         settings = yaml.load(file, Loader=yaml.FullLoader)
 
     print(settings["levels"])
@@ -974,9 +1072,8 @@ def main():
     else:
         result, regions, longitudes, latitudes = define_resolutions(settings)
 
-    
     estimate_number_of_nodes(result, longitudes, latitudes)
-    
+
     if (settings["use_existed_jigsaw_mesh"]) & (Path("_mesh_temp.pkl").exists()):
         with open("_mesh_temp.pkl", "rb") as file:
             mesh = pickle.load(file)

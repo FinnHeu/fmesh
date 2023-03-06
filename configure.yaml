@@ -1,15 +1,15 @@
 
-topo_path: "./topo/depths.nc" # path to topography
-n_latitudes: 2880 # number of latitudes (one will be added)
-n_longitudes: 1001 # number of longitudes (one will be added)
-base_resolution: 55 # resolution at equator, km
+topo_path: "./topo/RTopo-2.0.1_30sec_bos_fix_lowres_D3.nc" # path to topography
+n_latitudes: 180 # number of latitudes (one will be added)
+n_longitudes: 360 # number of longitudes (one will be added)
+base_resolution: 300 # resolution at equator, km
 
 use_existed_refinements: false
 
 use_existed_jigsaw_mesh: false
 
 mercator_resolution:
-    do_mercator_refinement: true
+    do_mercator_refinement: false
     norhtern_boundary: 60
     norhtern_lowest_resolution: 22.5    
     southern_boundary: -60
@@ -31,39 +31,53 @@ refine_over_bathymetry:
 do_refine_within_regions: true
 
 regions:
-    - name: Baffin
-      path: './kml_Jones/Baffin.kml'
-      resolution: 10
-    - name: Hudson
-      path: './kml_Jones/Hudson.kml' # path to the .kml file
-      resolution: 5 # resolution of the inner region
-    - name: CAA
-      path: './kml_Jones/CAA.kml'
-      resolution: 2
-    - name: Cardigan
-      path: './kml_Jones/Cardigan.kml'
-      resolution: 0.5
-    - name: Nares
-      path: './kml_Jones/Nares.kml'
-      resolution: 1
-    - name: Fury
-      path: './kml_Jones/Fury.kml'
-      resolution: 0.3
-    - name: Eclipse
-      path: './kml_Jones/Eclipse.kml'
-      resolution: 0.7
-    - name: Inglefield
-      path: './kml_Jones/Inglefield.kml'
-      resolution: 0.7
+    - name: Denmark
+      path: './kml/Denmark.kml' # path to the .kml file
+      resolution: 100 # resolution of the inner region
+    - name: Gibraltar
+      path: './kml/Gibraltar.kml'
+      resolution: 100
+    # - name: Baffin
+    #   path: './kml_Jones/Baffin.kml'
+    #   resolution: 10
+    # - name: Hudson
+    #   path: './kml_Jones/Hudson.kml' # path to the .kml file
+    #   resolution: 5 # resolution of the inner region
+    # - name: CAA
+    #   path: './kml_Jones/CAA.kml'
+    #   resolution: 2
+    # - name: Cardigan
+    #   path: './kml_Jones/Cardigan.kml'
+    #   resolution: 0.5
+    # - name: Nares
+    #   path: './kml_Jones/Nares.kml'
+    #   resolution: 1
+    # - name: Fury
+    #   path: './kml_Jones/Fury.kml'
+    #   resolution: 0.3
+    # - name: Eclipse
+    #   path: './kml_Jones/Eclipse.kml'
+    #   resolution: 0.7
+    # - name: Inglefield
+    #   path: './kml_Jones/Inglefield.kml'
+    #   resolution: 0.7
 
 plot_region:
+    # do_plotting: true
+    # min_lat: 60
+    # max_lat: 90
+    # min_lon: -180
+    # max_lon: 180
+    # projection: 'NorthPolarStereo'
+    # central_longitude: 0
     do_plotting: true
-    min_lat: 69.55
-    max_lat: 70.10
-    min_lon: -86.7
-    max_lon: -81.5
-    projection: 'NorthPolarStereo'
-    central_longitude: -84.0
+    min_lat: -60
+    max_lat: 50
+    min_lon: -100
+    max_lon: 0
+    projection: 'Mercator'
+    central_longitude: 0
+    
 
 minimum_depth: 30 # the minimum allowed depth in any node (positive (!) value in meters)
 
