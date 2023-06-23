@@ -258,9 +258,16 @@ def from_kml(file, order=True):
         for feature_0 in k.features():
             for step, feature_1 in enumerate(feature_0.features()):
                 for step, feature_2 in enumerate(feature_1.features()):
-                    lon, lat = np.squeeze(
-                        np.vsplit(np.array(feature_2.geometry.coords.xy), 2)
-                    )
+                    # print(dir(feature_2.geometry.coords))
+                    try:
+                        # old kml behaviour
+                        print(feature_2.geometry.coords)
+                        lon, lat = np.squeeze(
+                            np.vsplit(np.array(feature_2.geometry.coords.xy), 2)
+                        )
+                    except:
+                        # new kml behaviour (now coords is just a list of tuples)
+                        lon, lat, _ = zip(*feature_2.geometry.coords)
                     lon = np.append(lon, lon[0])
                     lat = np.append(lat, lat[0])
                     if step == 0:
