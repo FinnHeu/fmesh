@@ -499,7 +499,7 @@ def refine(region, longitudes, latitudes, result):
     max_lat = np.max(poly_out[1])
 
     # checking if the current polygon encircles poles for adjusting min_lat and max_lat
-    proj_work = ccrs.Stereographic(central_longitude=0, central_latitude=-90)
+    proj_work = ccrs.Orthographic(central_longitude=0, central_latitude=-90)
     x, y = proj_work.transform_point(0, -90, ccrs.Geodetic())
     (x_out, y_out, _) = np.hsplit(
         proj_work.transform_points(ccrs.Geodetic(), poly_out[0], poly_out[1]), 3
@@ -508,7 +508,7 @@ def refine(region, longitudes, latitudes, result):
         min_lat = -90
         min_lon = -180
         max_lon = 180
-    proj_work = ccrs.Stereographic(central_longitude=0, central_latitude=90)
+    proj_work = ccrs.Orthographic(central_longitude=0, central_latitude=90)
     x, y = proj_work.transform_point(0, 90, ccrs.Geodetic())
     (x_out, y_out, _) = np.hsplit(
         proj_work.transform_points(ccrs.Geodetic(), poly_out[0], poly_out[1]), 3
