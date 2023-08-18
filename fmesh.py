@@ -656,6 +656,12 @@ def define_resolutions(settings):
                     "southern_lowest_resolution"
                 ]
 
+    # refine resolution along equator
+    
+    if settings["refine_along_equator"]["do_refine_along_equator"]:
+        LAT, LON = np.meshgrid(latitudes, longitudes)
+        result = np.where(abs(LAT.T) <= settings["refine_along_equator"]["lat_boundary"], settings["refine_along_equator"]["resolution"], result)
+
     # refine resolution along coastlines
 
     if settings["refine_along_coastlines"]["do_refine_along_coastlines"]:
