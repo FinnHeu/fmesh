@@ -15,6 +15,11 @@ mercator_resolution:
     southern_boundary: -60
     southern_lowest_resolution: 22.5
 
+refine_along_equator:
+    do_refine_along_equator: true
+    lat_boundary: 3.5        # °N/S of the equator for the high-resolution nest
+    resolution: 50           # km
+    
 refine_along_coastlines:
     do_refine_along_coastlines: false
     min_resolution: 10      # km, resolution at the coast 
