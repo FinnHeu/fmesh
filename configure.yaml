@@ -1,5 +1,5 @@
 
-topo_path: "./topo/RTopo-2.0.1_30sec_bos_fix_lowres_D3.nc" # path to topography
+topo_path: "./topo/RTopo-2.0.4_30sec_bedrock_topography_with_cavities.nc" # path to topography
 n_latitudes: 180 # number of latitudes (one will be added)
 n_longitudes: 360 # number of longitudes (one will be added)
 base_resolution: 300 # resolution at equator, km
