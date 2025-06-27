@@ -222,6 +222,11 @@ class Find_topo:
         ]  
         self.__ds = nc.Dataset(topo_path)
         
+        self.__lat, self.__lon = (
+            self.__ds.variables["lat"], 
+            self.__ds.variables["lon"], 
+        )
+        
         self.topo = self.__ds.variables["topo"][:, :]
 
         self.topo[21600, :] = self.topo[21599, :]
@@ -754,8 +759,11 @@ def triangulation(src_path, dst_path, longitudes, latitudes, result):
     # print("Saving .vtk file")
     # jigsawpy.savevtk(os.path.join(dst_path, "_result.vtk"), mesh)
 
+    
     # saving mesh file
-    with open("_mesh_temp.pkl", "wb") as file:
+    print("")
+    print("Saving intermediate results to ./temp/_mesh_temp.pkl file for restarting the process without re-running JIGSAW")
+    with open("./temp/_mesh_temp.pkl", "wb") as file:
         pickle.dump(mesh, file)
 
     return mesh
