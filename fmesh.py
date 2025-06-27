@@ -617,32 +617,14 @@ def refine(region, longitudes, latitudes, result):
 
 def define_resolutions(settings):
 
-    latitudes = np.linspace(-90, 90, settings["n_latitudes"] + 1)  # 180*16
-    longitudes = np.linspace(
-        -180, 180, np.round(settings["n_longitudes"]).astype(int) + 1
-    )  # np.round(360*16/5.75).astype(int)
+    meshfile = "./resolution_arrays/resolution_DARS.pkl"
+    with open(meshfile, "rb") as file:
+        mesh_array = pickle.load(file)  # Load the data from the file
 
-    # base_resolution = 111
-    base_resolution = settings["base_resolution"]
-
-    result = np.full([len(latitudes), len(longitudes)], base_resolution).astype(float)
-
-    # resolution in the entire Arctic above 60N
-    # arctic_resolution = 25
-    # arctic_low = 60
-    # arctic_high = 65
-    # for i in range(0, len(longitudes)):
-    #    for j in range(0, len(latitudes)):
-    #        if (latitudes[j] > arctic_low) & (latitudes[j] < arctic_high):
-    #            result[j, i] = base_resolution - (base_resolution - arctic_resolution)*(latitudes[j] - arctic_low)/5
-    #        elif latitudes[j] >= arctic_high:
-    #            result[j, i] = arctic_resolution
-
-    # resolution in the entire Arctic above 60N
-    # for j in range(0, len(latitudes)):
-    #     result[j, :] = base_resolution * np.cos(np.deg2rad(latitudes[j]))
-    #     if abs(latitudes[j]) >= 77:
-    #         result[j, :] = 25
+    print('loading: ' + meshfile)
+    result = mesh_array[1]
+    latitudes = mesh_array[2]
+    longitudes = mesh_array[3]
 
     if settings["mercator_resolution"]["do_mercator_refinement"]:
         for j in range(0, len(latitudes)):
