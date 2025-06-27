@@ -997,21 +997,21 @@ def cut_land(settings, mesh):
     print("")
     print("saving FESOM2 files")
 
-    with open("elem2d.out", "w") as file:
+    with open("./mesh_files/elem2d.out", "w") as file:
         file.write(f"{len(triangles_new)}\n")
         for index in range(0, len(triangles_new)):
             file.write(
                 f"{triangles_new[index][0]+1} {triangles_new[index][1]+1} {triangles_new[index][2]+1}\n"
             )
 
-    with open("nod2d.out", "w") as file:
+    with open("./mesh_files/nod2d.out", "w") as file:
         file.write(f"{len(lon_new)}\n")
         for index in range(0, len(lon_new)):
             file.write(
                 f"{index+1} {lon_new[index]} {lat_new[index]} {coastnode_new[index]}\n"
             )
 
-    with open("aux3d.out", "w") as file:
+    with open("./mesh_files/aux3d.out", "w") as file:
         file.write(f'{int(len(settings["levels"]))}\n')
         for level in settings["levels"]:
             file.write(f"{level:.2f}\n")
@@ -1028,7 +1028,7 @@ def cut_land(settings, mesh):
 
     E3 = jigsawpy.tools.mathutils.S2toR3(radii, ans)
 
-    with open("_result.vtk", "w") as file:
+    with open("./mesh_files/_result.vtk", "w") as file:
         file.write("# vtk DataFile Version 3.0\n")
         file.write("_result.vtk\n")
         file.write("ASCII\n")
