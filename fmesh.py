@@ -300,7 +300,7 @@ def from_kml(file, order=True):
 def bathymetry_adjustment(settings, latitudes, longitudes, result):
 
     print("")
-    print("adjusting resolutions over bathymetry")
+    print("adjusting resolutions over bathymetry", flush=True)
 
     topo = Find_topo(settings)
 
@@ -347,7 +347,8 @@ def estimate_number_of_nodes(result, longitudes, latitudes):
 
     print("")
     print(
-        f"The estimated # of elements to build with jigsaw (including land) is { np.round(total).astype(int)}"
+        f"The estimated # of elements to build with jigsaw (including land) is { np.round(total).astype(int)}",
+        flush=True,
     )
 
     return
@@ -448,12 +449,12 @@ def refine_along_coastlines(
     proc_num = multiprocessing.cpu_count()
 
     print("")
-    print("preparing smoothed coastlines")
+    print("preparing smoothed coastlines", flush=True)
 
     lon_coast, lat_coast = read_coastlines2(min_length=min_length, averaging=averaging)
 
     print("")
-    print(f"refining along coastlines on multiple ({proc_num}) CPUs")
+    print(f"refining along coastlines on multiple ({proc_num}) CPUs", flush=True)
 
     parameters = tuple(
         [
@@ -530,9 +531,13 @@ def refine(region, longitudes, latitudes, result):
         min_lon = np.max(poly_out[0][poly_out[0] < 0])
 
     print("")
-    print(f"{region['name']}: resolution {region['resolution']} km")
+    print(f"{region['name']}: resolution {region['resolution']} km", flush=True)
     print(
-        f"{min_lon:.1f}   ", f"{max_lon:.1f}   ", f"{min_lat:.1f}   ", f"{max_lat:.1f}"
+        f"{min_lon:.1f}   ",
+        f"{max_lon:.1f}   ",
+        f"{min_lat:.1f}   ",
+        f"{max_lat:.1f}",
+        flush=True,
     )
 
     for i, grid_lon in enumerate(longitudes):
@@ -620,6 +625,7 @@ def refine(region, longitudes, latitudes, result):
 def define_resolutions(settings):
 
     meshfile = "./resolution_arrays/resolution_DARS.pkl"
+    print(f"Reading the mesh file for base resolution from:  {meshfile}", flush=True)
     with open(meshfile, "rb") as file:
         mesh_array = pickle.load(file)  # Load the data from the file
 
@@ -686,7 +692,7 @@ def define_resolutions(settings):
         result = bathymetry_adjustment(settings, latitudes, longitudes, result)
 
     # saving
-    with open("_result_temp.pkl", "wb") as file:
+    with open("./temp/_result_temp.pkl", "wb") as file:
         pickle.dump([regions, result, latitudes, longitudes], file)
 
     return result, regions, longitudes, latitudes
@@ -739,7 +745,7 @@ def triangulation(src_path, dst_path, longitudes, latitudes, result):
     # ------------------------------------ build mesh via JIGSAW!
 
     print("")
-    print("Call libJIGSAW")
+    print("Call libJIGSAW", flush=True)
 
     opts.hfun_scal = "absolute"
 
@@ -755,14 +761,12 @@ def triangulation(src_path, dst_path, longitudes, latitudes, result):
 
     jigsawpy.cmd.jigsaw(opts, mesh)
 
-    # print("")
-    # print("Saving .vtk file")
-    # jigsawpy.savevtk(os.path.join(dst_path, "_result.vtk"), mesh)
-
-    
     # saving mesh file
     print("")
-    print("Saving intermediate results to ./temp/_mesh_temp.pkl file for restarting the process without re-running JIGSAW")
+    print(
+        "Saving intermediate results to ./temp/_mesh_temp.pkl file for restarting the process without re-running JIGSAW",
+        flush=True,
+    )
     with open("./temp/_mesh_temp.pkl", "wb") as file:
         pickle.dump(mesh, file)
 
@@ -777,7 +781,7 @@ def cut_land(settings, mesh):
     # TRANSFORMING CARTESIAN MESH TO LONGITUDES AND LATITUDES -----------------
 
     print("")
-    print("transform jigsaw cartesian mesh to Lon-Lat")
+    print("transform jigsaw cartesian mesh to Lon-Lat", flush=True)
 
     radii = 6371 * np.ones(3)
 
@@ -795,12 +799,12 @@ def cut_land(settings, mesh):
     # DELETING VERTICES WITH POSITIVE ELEVATIONS AND LINKED TRIANGLES ---------
 
     print("")
-    print("reading global topography")
+    print("reading global topography", flush=True)
 
     topo = Find_topo(settings)
 
     print("")
-    print("deleting triangles over land: step 1 of 2")
+    print("deleting triangles over land: step 1 of 2", flush=True)
 
     for index in range(0, len(lon)):
 
@@ -816,7 +820,7 @@ def cut_land(settings, mesh):
         )
 
     print("")
-    print("deleting triangles over land: step 2 of 2")
+    print("deleting triangles over land: step 2 of 2", flush=True)
 
     for node in range(0, len(lon)):
 
@@ -844,7 +848,7 @@ def cut_land(settings, mesh):
     # DELETING "LOOSE" TRIANGLES ----------------------------------------------
 
     print("")
-    print('deleting "loose" elements')
+    print('deleting "loose" elements', flush=True)
 
     loose = True
     max_triangles = 6
@@ -892,7 +896,7 @@ def cut_land(settings, mesh):
             if total == 0:
                 loose = False
 
-            print(f'{total} "loose" elements were deleted at this step')
+            print(f'{total} "loose" elements were deleted at this step', flush=True)
 
         else:
             loose = False
@@ -920,7 +924,7 @@ def cut_land(settings, mesh):
     # i.e. ELIMINATING LAKES --------------------------------------------------
 
     print("")
-    print("eliminating inland lakes")
+    print("eliminating inland lakes", flush=True)
 
     active_triangles = []
     for i in tria_in_node[index]:
@@ -964,13 +968,13 @@ def cut_land(settings, mesh):
 
     if settings["plot_region"]["do_plotting"]:
         print("")
-        print("preparing figures")
+        print("preparing figures", flush=True)
         plotting(lon, lat, triangles, depths, coastnode, settings)
 
     # PREPARING FINAL ARRAYS --------------------------------------------------
 
     print("")
-    print("re-sorting elements and nodes")
+    print("re-sorting elements and nodes", flush=True)
 
     lon_new = lon[indices]
     lat_new = lat[indices]
@@ -1003,7 +1007,7 @@ def cut_land(settings, mesh):
     # SAVING CONFIG FILES FOR FESOM -------------------------------------------
 
     print("")
-    print("saving FESOM2 files")
+    print("saving FESOM2 files", flush=True)
 
     with open("./mesh_files/elem2d.out", "w") as file:
         file.write(f"{len(triangles_new)}\n")
@@ -1029,7 +1033,7 @@ def cut_land(settings, mesh):
     # SAVING .VKT FILE FOR PARAVIEW -------------------------------------------
 
     print("")
-    print("saving .vkt file for ParaView app")
+    print("saving .vkt file for ParaView app", flush=True)
 
     radii = 6371 * np.ones(3)
     ans = np.squeeze(np.dstack((np.deg2rad(lon_new), np.deg2rad(lat_new))))
@@ -1058,18 +1062,18 @@ def main():
     with open("./configure.yaml") as file:
         settings = yaml.load(file, Loader=yaml.FullLoader)
 
-    print(settings["levels"])
+    print(settings["levels"], flush=True)
 
-    if (settings["use_existed_refinements"]) & (Path("_result_temp.pkl").exists()):
-        with open("_result_temp.pkl", "rb") as file:
+    if (settings["use_existed_refinements"]) & (Path("./temp/_result_temp.pkl").exists()):
+        with open("./temp/_result_temp.pkl", "rb") as file:
             regions, result, latitudes, longitudes = pickle.load(file)
     else:
         result, regions, longitudes, latitudes = define_resolutions(settings)
 
     estimate_number_of_nodes(result, longitudes, latitudes)
 
-    if (settings["use_existed_jigsaw_mesh"]) & (Path("_mesh_temp.pkl").exists()):
-        with open("_mesh_temp.pkl", "rb") as file:
+    if (settings["use_existed_jigsaw_mesh"]) & (Path("./temp/_mesh_temp.pkl").exists()):
+        with open("./temp/_mesh_temp.pkl", "rb") as file:
             mesh = pickle.load(file)
     else:
         mesh = triangulation("jigsaw/", "jigsaw/", longitudes, latitudes, result)
