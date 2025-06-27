@@ -219,12 +219,9 @@ class Find_topo:
     def __init__(self, settings):
         topo_path = settings[
             "topo_path"
-        ]  # "./topo/RTopo-2.0.1_30sec_bos_fix_lowres_D3.nc"
+        ]  
         self.__ds = nc.Dataset(topo_path)
-        self.__lat, self.__lon = (
-            self.__ds.variables["lat"][:, 1],
-            self.__ds.variables["lon"][:, 0],
-        )
+        
         self.topo = self.__ds.variables["topo"][:, :]
 
         self.topo[21600, :] = self.topo[21599, :]
