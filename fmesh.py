@@ -903,10 +903,82 @@ def cut_land(settings, mesh):
 
     # =============================================================================
     #     DELETE NARROWS: ELEMENTS WITH ALL NODES == COASTNODES
-    #
-    #     pass
-    # =============================================================================
+    
+    print("")
+    print("deleting narrow (coastal-only) triangles", flush=True)
 
+    deleted_narrows = 0
+
+    for i in range(len(triangles)):
+        tri = triangles[i]
+        if np.all(tri >= 0):  # make sure triangle hasn't been deleted yet
+            if (
+                coastnode[tri[0]] == 1
+                and coastnode[tri[1]] == 1
+                and coastnode[tri[2]] == 1
+            ):
+                triangles[i, :] = -1  # delete triangle
+                deleted_narrows += 1
+
+    print(f"{deleted_narrows} narrow (coastal-only) triangles deleted", flush=True)
+    # =============================================================================
+# AGAIN, DETECTING "LOOSE" TRIANGLES ----------------------------------------------
+
+    print("")
+    print('again deleting "loose" elements', flush=True)
+
+    loose = True
+    max_triangles = 6
+
+    while loose:
+
+        tria_in_node = create_tria_in_node_dictionary(triangles)
+        total = 0
+
+        loose_nodes = [n for n in tria_in_node if len(tria_in_node[n]) <= max_triangles]
+
+        if max_triangles > 2:
+            max_triangles -= 1
+
+        if len(loose_nodes) > 0:
+            for node in loose_nodes:
+
+                # find all other nodes
+                nodes = []
+                for j in tria_in_node[node]:
+                    for i in (0, 1, 2):
+                        nodes.append(triangles[j, i])
+
+                nodes = len(set(nodes))
+
+                if (
+                    ((len(tria_in_node[node]) == 1) & (nodes == 3))
+                    | ((len(tria_in_node[node]) == 2) & (nodes == 5))
+                    | (
+                        (len(tria_in_node[node]) >= 3)
+                        & (nodes >= len(tria_in_node[node]) + 3)
+                    )
+                ):
+
+                    total += 1
+                    depths[node] = -1
+
+                    for j in tria_in_node[node]:
+                        for i in (0, 1, 2):
+                            if triangles[j, i] >= 0:
+                                coastnode[triangles[j, i]] = 1
+
+                        triangles[j, :] = -1
+
+            if total == 0:
+                loose = False
+
+            print(f'{total} "loose" elements were deleted at this step', flush=True)
+
+        else:
+            loose = False
+
+##########################################################################
     for node in range(len(lon)):
         n = 0
         if node in tria_in_node:
@@ -1070,7 +1142,7 @@ def main():
     else:
         result, regions, longitudes, latitudes = define_resolutions(settings)
 
-    estimate_number_of_nodes(result, longitudes, latitudes)
+        estimate_number_of_nodes(result, longitudes, latitudes)
 
     if (settings["use_existed_jigsaw_mesh"]) & (Path("./temp/_mesh_temp.pkl").exists()):
         with open("./temp/_mesh_temp.pkl", "rb") as file:
