@@ -4,6 +4,8 @@ Created on Sat Jul 30 13:00:19 2022
 
 @author: SKirillov
 """
+import warnings
+warnings.filterwarnings("ignore")
 
 import os
 import pickle
@@ -20,6 +22,9 @@ import geopy.distance as dist
 import netCDF4 as nc
 import numpy as np
 import geopy.distance as dist
+import networkx as nx
+from scipy.spatial import cKDTree, distance
+import xml.etree.ElementTree as ET
 
 from fastkml import geometry, kml
 from pathlib import Path
@@ -290,6 +295,45 @@ def from_kml(file, order=True):
 
             internal, outer = outer, internal
 
+    return internal, outer
+
+def from_kml_etree(file, order=True):
+    """
+    Extracts inner and outer boundaries from a KML with two LineString geometries.
+    Works even if fastkml fails due to namespace issues.
+
+    Parameters
+    ----------
+    file : str
+        Path to the KML file.
+    order : bool
+        If True, first path is internal. If False, reverse.
+
+    Returns
+    -------
+    internal : [lon, lat]
+    outer : [lon, lat]
+    """
+    tree = ET.parse(file)
+    root = tree.getroot()
+
+    # KML namespace
+    ns = {"kml": "http://www.opengis.net/kml/2.2"}
+
+    linestrings = root.findall(".//kml:LineString", ns)
+    if len(linestrings) != 2:
+        raise ValueError(f"Expected 2 LineString elements, found {len(linestrings)}")
+
+    paths = []
+    for ls in linestrings:
+        coord_text = ls.find("kml:coordinates", ns).text.strip()
+        coords = [tuple(map(float, c.split(","))) for c in coord_text.split()]
+        lon, lat = zip(*[(x, y) for x, y, *_ in coords])
+        lon = np.append(lon, lon[0])
+        lat = np.append(lat, lat[0])
+        paths.append([lon, lat])
+
+    internal, outer = (paths[0], paths[1]) if order else (paths[1], paths[0])
     return internal, outer
 
 
@@ -611,8 +655,8 @@ def refine(region, longitudes, latitudes, result):
                     )[0]
                     base_resolution = result[jj[0], ii[0]]
 
-                    result[j, i] = resolution + (base_resolution - resolution) * (
-                        distance_to_in / (distance_to_in + distance_to_out)
+                    result[j, i] = float(resolution + (base_resolution - resolution) * (
+                        distance_to_in / (distance_to_in + distance_to_out))
                     )
 
     return result
@@ -624,7 +668,7 @@ def refine(region, longitudes, latitudes, result):
 
 def define_resolutions(settings):
 
-    meshfile = "./resolution_arrays/resolution_DARS.pkl"
+    meshfile = "./archive/version_2.0/resolution_arrays/resolution_DARS_AAcoast.pkl"
     print(f"Reading the mesh file for base resolution from:  {meshfile}", flush=True)
     with open(meshfile, "rb") as file:
         mesh_array = pickle.load(file)  # Load the data from the file
@@ -672,7 +716,7 @@ def define_resolutions(settings):
         # create polygons from .kml files
 
         for reg in settings["regions"]:
-            internal, outer = from_kml(reg["path"])
+            internal, outer = from_kml_etree(reg["path"])
             regions.append({})
             regions[-1]["name"] = reg["name"]
             regions[-1]["Polygon inside"] = internal[0], internal[1]
@@ -978,7 +1022,8 @@ def cut_land(settings, mesh):
         else:
             loose = False
 
-##########################################################################
+##############################################################################
+
     for node in range(len(lon)):
         n = 0
         if node in tria_in_node:
