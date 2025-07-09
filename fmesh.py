@@ -967,11 +967,70 @@ def cut_land(settings, mesh):
     print(f"{deleted_narrows} narrow (coastal-only) triangles deleted", flush=True)
 
     # =============================================================================
-    #     DELETE DANGLING REGIONS
-    
+    # =============================================================================
+    #     DELETE TRIANGLE CLUSTERS CONNECTED BY ONLY ONE EDGE
     print("")
-    print("removing dangling appendages", flush=True)
-    remove_dangling_appendages(triangles, coastnode)
+    print("deleting triangle clusters connected by only one edge", flush=True)
+
+    # Recompute the triangle-to-node mapping dictionary
+    # This helps identify which triangles are connected to which nodes
+    tria_in_node = create_tria_in_node_dictionary(triangles)
+
+    # Dictionary to track edges and which triangles share them
+    # Key: tuple of node indices representing an edge (always sorted as (min, max))
+    # Value: list of triangle indices that include this edge
+    edge_to_triangles = {}
+
+    for t_index, tri in enumerate(triangles):
+        if np.any(tri < 0):  # Skip triangles already marked as deleted
+            continue
+
+        # Extract all 3 edges of the current triangle
+        # Each edge is a pair of node indices
+        edges = [(tri[0], tri[1]), (tri[1], tri[2]), (tri[2], tri[0])]
+
+        for edge in edges:
+            # Sort edge node indices to ensure consistency
+            # So (A, X) and (X, A) are treated the same
+            edge = tuple(sorted(edge))
+
+            # Add this triangle index to the list of triangles sharing this edge
+            if edge not in edge_to_triangles:
+                edge_to_triangles[edge] = []
+            edge_to_triangles[edge].append(t_index)
+
+    # Counter to keep track of how many triangles we delete
+    total_deleted = 0
+
+    # Now scan through the edge dictionary
+    # We're interested in edges that are shared by exactly two triangles
+    for edge, tris in edge_to_triangles.items():
+        if len(tris) == 2:
+            a, x = edge  # Unpack the two nodes that make up the edge
+
+            # Check if both nodes are coastal
+            if coastnode[a] == 1 and coastnode[x] == 1:
+
+                # Extract the two triangle indices
+                t1, t2 = tris
+
+                # Delete both triangles connected through this coastal edge
+                for t in [t1, t2]:
+                    for i in (0, 1, 2):
+                        node = triangles[t, i]
+
+                        # Mark all nodes in the triangle as coastal
+                        # (This is consistent with your earlier logic)
+                        if node >= 0:
+                            coastnode[node] = 1
+
+                    # Mark the triangle as deleted by setting all indices to -1
+                    triangles[t, :] = -1
+
+                    total_deleted += 1
+
+    print(f"{total_deleted} triangles deleted from single-edge clusters", flush=True)
+    
     # =============================================================================
     # AGAIN, DETECTING "LOOSE" TRIANGLES ----------------------------------------------
 
@@ -1181,93 +1240,9 @@ def cut_land(settings, mesh):
         for index in range(0, len(triangles_new)):
             file.write("5\n")
 
+
 import numpy as np
 from collections import defaultdict
-
-def remove_dangling_appendages(triangles, coastnode):
-    """
-    Detect and remove dangling regions connected via a single coastal edge
-    from a mesh defined by triangle connectivity and coastal nodes.
-    """
-    def build_coastlines(triangles, coastnode):
-        edge_map = defaultdict(list)
-        for i, tri in enumerate(triangles):
-            if np.any(tri < 0):
-                continue
-            for j in range(3):
-                a, b = tri[j], tri[(j+1)%3]
-                if coastnode[a] == 1 and coastnode[b] == 1:
-                    edge = tuple(sorted((a, b)))
-                    edge_map[edge].append(i)
-
-        boundary_edges = [edge for edge, tris in edge_map.items() if len(tris) == 1]
-
-        edge_dict = defaultdict(list)
-        for a, b in boundary_edges:
-            edge_dict[a].append(b)
-            edge_dict[b].append(a)
-
-        visited = set()
-        coastlines = []
-
-        for start in edge_dict:
-            if start in visited:
-                continue
-            loop = []
-            current = start
-            prev = None
-            while True:
-                loop.append(current)
-                visited.add(current)
-                neighbors = edge_dict[current]
-                next_node = [n for n in neighbors if n != prev and n not in visited]
-                if not next_node:
-                    break
-                prev, current = current, next_node[0]
-            if len(loop) > 2:
-                coastlines.append(loop)
-        return coastlines
-
-    def detect_dangling_segments(coastline, triangles_set):
-        for i in range(len(coastline)):
-            for j in range(i + 3, len(coastline)):  # skip adjacent pairs
-                a, b = coastline[i], coastline[j]
-                for tri in triangles_set:
-                    if a in tri and b in tri:
-                        return i, j  # found bridge
-        return None
-
-    def delete_triangles_with_nodes(triangles, target_nodes):
-        deleted = 0
-        for i, tri in enumerate(triangles):
-            if np.all(tri >= 0) and np.all(np.isin(tri, target_nodes)):
-                triangles[i, :] = -1
-                deleted += 1
-        return deleted
-
-    triangles_set = [set(tri) for tri in triangles if np.all(tri >= 0)]
-    total_removed = 0
-    removed_in_pass = 1
-
-    while removed_in_pass > 0:
-        removed_in_pass = 0
-        coastlines = build_coastlines(triangles, coastnode)
-
-        for coastline in coastlines:
-            result = detect_dangling_segments(coastline, triangles_set)
-            if result:
-                i, j = result
-                to_remove = coastline[i+1:j]  # strictly between bridge ends
-                removed = delete_triangles_with_nodes(triangles, to_remove)
-                removed_in_pass += removed
-                # also clear coastnode flag for deleted nodes
-                for node in to_remove:
-                    coastnode[node] = 0
-                break  # restart coastline detection after first cut
-
-        total_removed += removed_in_pass
-
-        print(f"Removed {total_removed} triangles in dangling appendage removal.")
 
 def main():
     with open("./configure.yaml") as file:
